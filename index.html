@@ -12,141 +12,219 @@
 body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 .w{max-width:520px;margin:0 auto;padding:14px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
-h1{font-size:20px;margin:6px 0 12px;display:flex;justify-content:space-between;align-items:center}h2{font-size:16px;margin:0 0 10px}
+h1{font-size:20px;margin:6px 0 12px;display:flex;align-items:center;gap:10px}h2{font-size:16px;margin:0 0 10px}
 label{display:block;font-size:13px;color:var(--mu);margin:8px 0 3px}
-input{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
+input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit}
 .r{display:flex;gap:8px}.r>*{flex:1}
 button{font:inherit;border:0;border-radius:10px;padding:11px 14px;background:var(--ac);color:#fff;cursor:pointer;width:100%;margin-top:12px}
-.seg{display:flex;gap:8px}.seg button{margin:0;background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
-.seg button.on.e{background:var(--ex);color:#fff;border-color:var(--ex)}.seg button.on.i{background:var(--in);color:#fff;border-color:var(--in)}
+button.sm{width:auto;margin:0;padding:6px 12px;background:none;color:var(--tx);border:1px solid var(--bd);font-size:14px}
+button.gh{background:none;color:var(--mu);border:1px solid var(--bd)}
 .sum{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
-.sum small{display:block;color:var(--mu);font-size:12px}.sum b{font-size:15px}
+.sum small,.row small{display:block;color:var(--mu);font-size:12px}.sum b{font-size:15px}
 .i{color:var(--in)}.e{color:var(--ex)}
-.row{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--bd)}
-.row:first-of-type{border-top:0}.row small{color:var(--mu);display:block;font-size:12px}
-.sm{width:auto;margin:0;padding:3px 9px;background:none;color:var(--mu);border:1px solid var(--bd);font-size:12px}
+.row{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--bd);cursor:pointer}
+.row:first-child{border-top:0}.vd{opacity:.5;text-decoration:line-through}
 .mu{color:var(--mu);font-size:13px}.msg{color:var(--ex);font-size:13px;min-height:18px}
 .n{direction:ltr;unicode-bidi:plaintext;text-align:left}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9;display:flex}
+.side{width:260px;max-width:80%;background:var(--card);padding:20px 16px;padding-top:calc(20px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px}
+.side button{margin:0;text-align:start;background:none;color:var(--tx);border:0;padding:12px 8px;border-radius:8px}
+.side button.on{background:var(--bg);font-weight:600}
+.mdl{margin:auto;width:92%;max-width:480px;max-height:90vh;overflow:auto;background:var(--card);border-radius:14px;padding:16px}
+.ts{position:fixed;bottom:calc(14px + env(safe-area-inset-bottom,0px));left:14px;right:14px;background:#222;color:#fff;border-radius:10px;padding:10px;display:none;z-index:20;text-align:center}
 </style>
 </head>
 <body>
-<div class="w" id="app"></div>
+<div class="w" id="app"></div><div class="ts" id="ts"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,onSnapshot} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,setDoc,deleteDoc,getDoc,getDocs,query,where,onSnapshot} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const app=initializeApp({apiKey:"AIzaSyArypz2V27qmgvfXE3nPjk6ChkJIQYaHwI",authDomain:"accounting-for-me.firebaseapp.com",projectId:"accounting-for-me",storageBucket:"accounting-for-me.firebasestorage.app",messagingSenderId:"514526893213",appId:"1:514526893213:web:0fe36dfc7de2112a75b074"});
 const auth=getAuth(app);
 const db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
-const NAMES={'aliali1209120t@gmail.com':'haidara','j68975793@gmail.com':'koko'};
 
 const $=s=>document.querySelector(s);
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const fmt=(n,d=0)=>Number(n).toLocaleString('en-US',{maximumFractionDigits:d});
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
-let user=null,who='',key=null,rows=[],rates={},bad=0,type='expense',month=today().slice(0,7),unsubs=[];
+const addM=(m,n)=>{const [y,o]=m.split('-').map(Number),d=new Date(y,o-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+const toast=m=>{const e=$('#ts');e.textContent=m;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',4000)};
+let user,who,key,items=[],rates={},evM=[],evX=[],bM=0,bX=0,page='home',month=today().slice(0,7),from=addM(month,-2),unsubs=[];
 
-// التشفير: AES-256-GCM والمفتاح من كلمة سر التشفير
+// ===== التشفير: AES-256-GCM =====
 const b64=u=>btoa(String.fromCharCode(...u)),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 async function mkKey(p){const m=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);
-return crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode('home-ledger-v1'),iterations:150000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+return crypto.subtle.deriveKey({name:'PBKDF2',salt:new TextEncoder().encode('home-ledger-v1'),iterations:310000,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
 async function enc(o){const iv=crypto.getRandomValues(new Uint8Array(12));
 const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(o))));
-const all=new Uint8Array(12+ct.length);all.set(iv);all.set(ct,12);return b64(all);}
+const a=new Uint8Array(12+ct.length);a.set(iv);a.set(ct,12);return b64(a);}
 async function dec(s){const a=unb64(s);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:a.slice(0,12)},key,a.slice(12))));}
 
-// المسار: دخول، ثم كلمة التشفير، ثم التطبيق
+// ===== الدخول =====
 onAuthStateChanged(auth,async u=>{
  unsubs.forEach(f=>f());unsubs=[];user=u;
  if(!u){key=null;return loginScreen()}
- who=NAMES[(u.email||'').toLowerCase()]||u.email;
  if(!key&&ls.get('pw'))try{key=await mkKey(ls.get('pw'))}catch(e){}
- key?start():phraseScreen();
+ key?afterKey():phraseScreen();
 });
-
-function loginScreen(msg=''){
- $('#app').innerHTML=`<h1>دفتر البيت</h1><div class="card"><h2>تسجيل الدخول</h2>
- <label>الإيميل</label><input id="em" type="email" class="n" autocomplete="username">
- <label>كلمة السر</label><input id="pw" type="password" class="n" autocomplete="current-password">
- <div class="msg" id="lm">${msg}</div><button id="go">دخول</button></div>`;
- $('#go').onclick=async()=>{$('#lm').textContent='';
-  try{await signInWithEmailAndPassword(auth,$('#em').value.trim(),$('#pw').value)}
-  catch(e){$('#lm').textContent='الإيميل أو كلمة السر غلط'}};
+const shell=(b)=>`<h1>دفتر البيت</h1><div class="card">${b}</div>`;
+function loginScreen(){
+ $('#app').innerHTML=shell(`<h2>تسجيل الدخول</h2><label>الإيميل</label><input id="em" type="email" class="n" autocomplete="username">
+ <label>كلمة السر</label><input id="pw" type="password" class="n" autocomplete="current-password"><div class="msg" id="lm"></div><button id="go">دخول</button>`);
+ $('#go').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('#em').value.trim(),$('#pw').value)}catch(e){$('#lm').textContent='الإيميل أو كلمة السر غلط'}};
 }
-
-function phraseScreen(msg=''){
- $('#app').innerHTML=`<h1>دفتر البيت</h1><div class="card"><h2>كلمة سر التشفير</h2>
- <p class="mu">غير كلمة سر الدخول. لازم تكون نفسها عند الاثنين، وبيتم فيها تشفير كل البيانات قبل ما تطلع من الجهاز. إذا ضاعت ما في طريقة لاسترجاع البيانات.</p>
+function phraseScreen(){
+ $('#app').innerHTML=shell(`<h2>كلمة سر التشفير</h2><p class="mu">غير كلمة سر الدخول، ونفسها عند الاثنين. كل البيانات بتتشفر فيها قبل ما تطلع من الجهاز. إذا ضاعت ما في استرجاع. الأفضل جملة طويلة (4 كلمات عشوائية مثلاً).</p>
  <input id="ph" type="password" class="n"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="rm" style="width:auto" checked> تذكّرها على هالجهاز</label>
- <div class="msg" id="lm">${msg}</div><button id="go">متابعة</button><button class="sm" id="lo" style="margin-top:8px">تسجيل خروج</button></div>`;
+ <div class="msg" id="lm"></div><button id="go">متابعة</button><button class="gh" id="lo">تسجيل خروج</button>`);
  $('#lo').onclick=()=>signOut(auth);
- $('#go').onclick=async()=>{const p=$('#ph').value;if(p.length<6){$('#lm').textContent='6 أحرف على الأقل';return}
-  key=await mkKey(p);$('#rm').checked?ls.set('pw',p):ls.del('pw');start()};
+ $('#go').onclick=async()=>{const p=$('#ph').value;if(p.length<8){$('#lm').textContent='8 أحرف على الأقل';return}
+  $('#go').disabled=true;key=await mkKey(p);
+  const ref=doc(db,'meta','check');let s;
+  try{s=await getDoc(ref)}catch(e){$('#lm').textContent='لازم نت أول مرة';$('#go').disabled=false;key=null;return}
+  if(!s.exists()){try{await setDoc(ref,{c:await enc({ok:1})});s=null}catch(e){try{s=await getDoc(ref)}catch(x){}}}
+  if(s&&s.exists())try{await dec(s.data().c)}catch(e){$('#lm').textContent='كلمة التشفير غير مطابقة للي استعملتوها قبل';$('#go').disabled=false;key=null;return}
+  $('#rm').checked?ls.set('pw',p):ls.del('pw');afterKey()};
 }
+function afterKey(){
+ who=ls.get('nm_'+user.uid);
+ if(who)return start();
+ $('#app').innerHTML=shell(`<h2>شو اسمك؟</h2><p class="mu">مرة وحدة بس على هالجهاز، وبيتكتب تلقائياً مع كل عملية.</p><input id="nm"><button id="go">حفظ</button>`);
+ $('#go').onclick=()=>{const n=$('#nm').value.trim();if(!n)return;ls.set('nm_'+user.uid,n);who=n;start()};
+}
+
+// ===== البيانات: سجل أحداث لا يُعدَّل ولا يُحذف =====
+// p = الجزء: شهر الإنشاء للعمليات (نقرأ آخر 3 أشهر فقط)، x للمدخرات والديون، r للأسعار (صغيرة، نقرأها كلها)
+function sub(){unsubs.forEach(f=>f());unsubs=[];
+ const mk=(q,set)=>onSnapshot(q,async s=>{const o=[];let b=0;
+  for(const d of s.docs)try{o.push({...await dec(d.data().c),did:d.id,p:d.data().p})}catch(e){b++}
+  set(o,b);fold();draw()},e=>toast('خطأ: '+e.message));
+ const ev=collection(db,'ev');
+ unsubs.push(mk(query(ev,where('p','>=',from),where('p','<','a')),(o,b)=>{evM=o;bM=b}));
+ unsubs.push(mk(query(ev,where('p','in',['x','r'])),(o,b)=>{evX=o;bX=b}));
+}
+function fold(){const g={};[...evM,...evX].forEach(e=>(g[e.k+':'+e.rid]=g[e.k+':'+e.rid]||[]).push(e));
+ items=[];rates={};
+ for(const k in g){const h=g[k].sort((a,b)=>a.ts-b.ts||a.did.localeCompare(b.did)),l=h[h.length-1];
+  if(l.k=='rate'){if(!l.void)rates[l.rid]=l.v.rate}else items.push({...l,hist:h})}}
+async function put(k,rid,v,p,vd=false){const c=await enc({k,rid,v,who,ts:Date.now(),void:vd});
+ setDoc(doc(db,'ev',crypto.randomUUID()),{p,c}).catch(e=>toast('ما انحفظت: '+(e.message||e.code)))}
+const ensure=m=>{if(m<from){from=m;toast('عم نحمّل أشهر أقدم...');sub()}};
+
+// ===== النماذج =====
+const SEL={type:{expense:'مصروف',income:'دخل'},dir:{in:'إيداع',out:'سحب'},cur:{SYP:'ل.س',USD:'$'},ddir:{owe:'دين عليّ',owed:'دين إلي'},kind:{loan:'دين جديد',pay:'تسديد'}};
+const FD={
+ tx:[['type','النوع','s:type'],['cat','الصنف (مشتريات / مصدر الدخل)','text'],['am','المبلغ بالليرة السورية','number'],['date','التاريخ','date'],['time','الوقت','time'],['note','ملاحظة (اختياري)','text']],
+ sav:[['dir','العملية','s:dir'],['cur','العملة','s:cur'],['am','المبلغ','number'],['date','التاريخ','date'],['note','ملاحظة (اختياري)','text']],
+ debt:[['person','الشخص','text'],['dir','نوع الدين','s:ddir'],['kind','العملية','s:kind'],['cur','العملة','s:cur'],['am','المبلغ','number'],['date','التاريخ','date'],['note','ملاحظة (اختياري)','text']]};
+const DEF=k=>({type:'expense',dir:k=='debt'?'owe':'in',kind:'loan',cur:'SYP',date:today(),time:new Date().toTimeString().slice(0,5)});
+const fld=([n,l,t],v,pre)=>t[0]=='s'?`<label>${l}</label><select id="${pre}_${n}">${Object.entries(SEL[t.slice(2)]).map(([a,b])=>`<option value="${a}"${v[n]==a?' selected':''}>${b}</option>`).join('')}</select>`
+ :`<label>${l}</label><input id="${pre}_${n}" type="${t}" value="${esc(v[n])}"${t=='number'?' inputmode="decimal" class="n"':''}>`;
+const form=(k,v,pre)=>FD[k].map(f=>fld(f,v,pre)).join('')+(k=='tx'?`<label>سعر الصرف لهاليوم (ل.س لكل $)</label><input id="${pre}_rate" type="number" inputmode="decimal" class="n"><div class="mu" id="${pre}_rh"></div>`:'');
+const read=(k,pre)=>Object.fromEntries(FD[k].map(([n,,t])=>[n,t=='number'?+$(`#${pre}_${n}`).value:$(`#${pre}_${n}`).value.trim()]));
+function syncRate(pre){const el=$(`#${pre}_rate`);if(!el)return;const r=rates[$(`#${pre}_date`).value];
+ if(document.activeElement!==el)el.value=r||'';
+ $(`#${pre}_rh`).textContent=r?'سعر مشترك بينكن لهاليوم. تعديله بيغيّر حساب كل عمليات هاليوم.':'ما في سعر لهاليوم، دخّله مرة وحدة وبيظهر عند الاثنين.'}
+function hook(pre){const d=$(`#${pre}_date`);if(d&&$(`#${pre}_rate`)){d.onchange=()=>{$(`#${pre}_rate`).value='';syncRate(pre)};syncRate(pre)}}
+async function submit(k,pre,it){const v=read(k,pre),rt=k=='tx'?+$(`#${pre}_rate`).value:1;
+ const ok=k=='tx'?v.cat&&v.am>0&&v.date&&rt>0:k=='sav'?v.am>0&&v.date:v.person&&v.am>0&&v.date;
+ if(!ok){toast('عبّي الحقول المطلوبة (المبلغ لازم أكبر من صفر)');return false}
+ if(k=='tx'&&rates[v.date]!==rt)put('rate',v.date,{rate:rt},'r');
+ await put(k,it?it.rid:crypto.randomUUID(),v,it?it.p:k=='tx'?today().slice(0,7):'x');return true}
+
+// ===== العرض =====
+const sumV=(k,v)=>k=='tx'?`${v.cat} · ${fmt(v.am)}`:k=='sav'?`${SEL.dir[v.dir]} ${fmt(v.am)} ${SEL.cur[v.cur]}`:`${v.person} · ${SEL.kind[v.kind]} ${fmt(v.am)} ${SEL.cur[v.cur]}`;
+const row=it=>{const v=it.v,k=it.k;let t,a;
+ if(k=='tx'){t=v.cat;a=`<b class="${v.type=='income'?'i':'e'} n">${v.type=='income'?'+':'−'}${fmt(v.am)} ل.س</b><small class="n">${rates[v.date]?'$'+fmt(v.am/rates[v.date],2)+' @ '+fmt(rates[v.date]):'بدون سعر'}</small>`}
+ else if(k=='sav'){t=SEL.dir[v.dir];a=`<b class="${v.dir=='in'?'i':'e'} n">${v.dir=='in'?'+':'−'}${fmt(v.am)} ${SEL.cur[v.cur]}</b>`}
+ else{t=`${v.person} · ${SEL.ddir[v.dir]} · ${SEL.kind[v.kind]}`;a=`<b class="n">${fmt(v.am)} ${SEL.cur[v.cur]}</b>`}
+ return `<div class="row${it.void?' vd':''}" data-key="${k}:${it.rid}"><div><b>${esc(t)}</b><small>${esc(it.who)} · ${esc(v.date)} ${esc(v.time||'')}${v.note?' · '+esc(v.note):''}${it.hist.length>1?' · معدّلة':''}${it.void?' · ملغاة':''}</small></div><div style="text-align:end">${a}</div></div>`};
+const list=(k,f=()=>true)=>items.filter(i=>i.k==k&&f(i)).sort((a,b)=>(b.v.date+(b.v.time||'')).localeCompare(a.v.date+(a.v.time||''))||b.ts-a.ts).map(row).join('')||'<p class="mu">ما في عمليات.</p>';
+const live=k=>items.filter(i=>i.k==k&&!i.void);
+const usd=v=>rates[v.date]?v.am/rates[v.date]:0;
+const box=(l,v,c)=>`<div><small>${l}</small><b class="${c} n">${fmt(v[0])} ل.س</b><small class="n">$${fmt(v[1],2)}</small></div>`;
+const bad=()=>bM+bX?`<p class="msg">${bM+bX} عملية ما انفكت (كلمة التشفير مختلفة؟)</p>`:'';
+
+const pages={
+ home(){$('#pg').innerHTML=`<div class="card"><h2>عملية جديدة</h2>${form('tx',DEF('tx'),'a')}<button id="sv">حفظ</button></div>
+  <div class="card"><div class="r" style="align-items:center"><h2 style="margin:0">ملخص الشهر</h2><input id="mo" type="month" value="${month}"></div><div class="sum" id="sum" style="margin-top:10px"></div></div>
+  <div class="card"><h2>العمليات</h2><div id="ls"></div></div>`;hook('a');
+  $('#mo').onchange=e=>{month=e.target.value||month;ensure(month);draw()};
+  $('#sv').onclick=async()=>{if(await submit('tx','a'))['am','cat','note'].forEach(n=>$('#a_'+n).value='')}},
+ sav(){$('#pg').innerHTML=`<div class="card"><h2>المدخرات</h2><div class="sum" id="sum"></div></div><div class="card"><h2>إيداع أو سحب</h2>${form('sav',DEF('sav'),'a')}<button id="sv">حفظ</button></div><div class="card"><h2>السجل</h2><div id="ls"></div></div>`;
+  $('#sv').onclick=async()=>{if(await submit('sav','a')){$('#a_am').value='';$('#a_note').value=''}}},
+ debt(){$('#pg').innerHTML=`<div class="card"><h2>الديون</h2><div id="sum"></div></div><div class="card"><h2>دين جديد أو تسديد</h2>${form('debt',DEF('debt'),'a')}<button id="sv">حفظ</button></div><div class="card"><h2>السجل</h2><div id="ls"></div></div>`;
+  $('#sv').onclick=async()=>{if(await submit('debt','a')){$('#a_am').value='';$('#a_note').value=''}}},
+ rep(){const m1=month+'-01';$('#pg').innerHTML=`<div class="card"><h2>التقرير</h2><div class="r"><div><label>من</label><input id="f" type="date" value="${m1}"></div><div><label>إلى</label><input id="t" type="date" value="${today()}"></div></div>
+  <div class="r"><div><label>مين</label><select id="w"><option value="">الكل</option>${[...new Set(items.map(i=>i.who))].map(n=>`<option>${esc(n)}</option>`).join('')}</select></div>
+  <div><label>النوع</label><select id="ty"><option value="">الكل</option><option value="expense">مصاريف</option><option value="income">دخل</option></select></div></div>
+  <label>صنف محدد (اكتب جزء من الاسم)</label><input id="q"></div><div class="card"><div class="sum" id="sum"></div></div><div class="card"><h2>حسب الصنف</h2><div id="ls"></div></div>`;
+  ['f','t','w','ty','q'].forEach(i=>$('#'+i).oninput=()=>{if(i=='f'&&$('#f').value)ensure($('#f').value.slice(0,7));draw()})}
+};
+const draws={
+ home(){const m=i=>i.v.date.startsWith(month),s={income:[0,0],expense:[0,0]};
+  live('tx').filter(m).forEach(i=>{s[i.v.type][0]+=i.v.am;s[i.v.type][1]+=usd(i.v)});
+  const n=[s.income[0]-s.expense[0],s.income[1]-s.expense[1]];
+  $('#sum').innerHTML=box('الدخل',s.income,'i')+box('المصاريف',s.expense,'e')+box('الصافي',n,n[0]>=0?'i':'e');
+  $('#ls').innerHTML=bad()+list('tx',m)},
+ sav(){const t={SYP:0,USD:0};live('sav').forEach(i=>t[i.v.cur]+=(i.v.dir=='in'?1:-1)*i.v.am);
+  $('#sum').innerHTML=`<div style="grid-column:span 3;display:flex;justify-content:space-around"><div><small>بالليرة</small><b class="n">${fmt(t.SYP)} ل.س</b></div><div><small>بالدولار</small><b class="n">${fmt(t.USD,2)} $</b></div></div>`;
+  $('#ls').innerHTML=list('sav')},
+ debt(){const b={};live('debt').forEach(i=>{const k=i.v.dir+'|'+i.v.person+'|'+i.v.cur;b[k]=(b[k]||0)+(i.v.kind=='loan'?1:-1)*i.v.am});
+  const part=d=>Object.entries(b).filter(([k,v])=>k.startsWith(d+'|')&&Math.abs(v)>0.001).map(([k,v])=>{const [,p,c]=k.split('|');return `<div class="row" style="cursor:default"><b>${esc(p)}</b><b class="n">${fmt(v,2)} ${SEL.cur[c]}</b></div>`}).join('')||'<p class="mu">لا يوجد.</p>';
+  $('#sum').innerHTML=`<label>الديون اللي عليّ</label>${part('owe')}<label>الديون اللي إلي</label>${part('owed')}`;
+  $('#ls').innerHTML=list('debt')},
+ rep(){const f=$('#f').value,t=$('#t').value,w=$('#w').value,ty=$('#ty').value,q=$('#q').value.trim().toLowerCase();
+  const sel=live('tx').filter(i=>i.v.date>=f&&i.v.date<=t&&(!w||i.who==w)&&(!ty||i.v.type==ty)&&(!q||i.v.cat.toLowerCase().includes(q)));
+  const s={income:[0,0],expense:[0,0]},c={};
+  sel.forEach(i=>{s[i.v.type][0]+=i.v.am;s[i.v.type][1]+=usd(i.v);const k=i.v.type+'|'+i.v.cat;c[k]=c[k]||[0,0,0];c[k][0]+=i.v.am;c[k][1]+=usd(i.v);c[k][2]++});
+  $('#sum').innerHTML=box('الدخل',s.income,'i')+box('المصاريف',s.expense,'e')+`<div><small>عدد العمليات</small><b>${sel.length}</b></div>`;
+  $('#ls').innerHTML=Object.entries(c).sort((a,b)=>b[1][0]-a[1][0]).map(([k,v])=>{const [y,n]=k.split('|');return `<div class="row" style="cursor:default"><div><b>${esc(n)}</b><small>${v[2]} عمليات · ${y=='income'?'دخل':'مصروف'}</small></div><div style="text-align:end"><b class="${y=='income'?'i':'e'} n">${fmt(v[0])} ل.س</b><small class="n">$${fmt(v[1],2)}</small></div></div>`}).join('')||'<p class="mu">ما في نتائج.</p>'}
+};
+function go(p){page=p;$('#dr').hidden=true;document.querySelectorAll('.side [data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p==p));pages[p]();draw()}
+function draw(){if(!$('#pg'))return;draws[page]();['a','e'].forEach(syncRate)}
+
+// ===== تعديل عملية + السجل =====
+function openEdit(it){
+ const o=document.createElement('div');o.className='ov';o.id='md';
+ const hist=[...it.hist].reverse().map(h=>`<div class="mu">${new Date(h.ts).toLocaleString('ar-SY')} · ${esc(h.who)} · ${esc(sumV(h.k,h.v))}${h.void?' · إلغاء':''}</div>`).join('');
+ o.innerHTML=`<div class="mdl"><h2>تعديل</h2>${form(it.k,it.v,'e')}<div class="msg"></div>
+  <button id="es">حفظ التعديل</button><button class="gh" id="ev">${it.void?'استرجاع العملية':'تعليم كملغاة (بتضل بالسجل)'}</button><button class="gh" id="ed" style="color:var(--ex)">حذف العملية (دخلتها بالغلط)</button><button class="gh" id="ec">إغلاق</button>
+  <h2 style="margin-top:16px">سجل التعديلات</h2>${hist}<p class="mu">التعديل والإلغاء بيتسجلوا كمدخلات جديدة. الحذف هو الوحيد اللي بيمسح نهائياً.</p></div>`;
+ document.body.appendChild(o);
+ if(it.k=='tx')$('#e_rate').value=rates[it.v.date]||'';hook('e');
+ $('#ec').onclick=()=>o.remove();
+ $('#es').onclick=async()=>{if(await submit(it.k,'e',it))o.remove()};
+ $('#ev').onclick=async()=>{await put(it.k,it.rid,it.v,it.p,!it.void);o.remove()};
+ $('#ed').onclick=()=>askDel(it,o);
+}
+function askDel(it,o){const c=document.createElement('div');c.className='ov';c.style.zIndex=15;
+ c.innerHTML=`<div class="mdl"><h2>أكيد بالغلط ولا ما بدك تسجّلها؟</h2><p class="mu">${esc(sumV(it.k,it.v))}<br>رح تنحذف نهائياً من عند الاثنين مع كل تعديلاتها، وما في رجعة.</p>
+  <button id="dy" style="background:var(--ex)">موافق</button><button class="gh" id="dn">إلغاء</button></div>`;
+ document.body.appendChild(c);
+ $('#dn').onclick=()=>c.remove();
+ $('#dy').onclick=()=>{c.remove();o.remove();
+  it.hist.forEach(h=>deleteDoc(doc(db,'ev',h.did)).catch(e=>toast('ما انحذفت: '+(e.message||e.code))))};
+}
+document.addEventListener('click',e=>{const r=e.target.closest('.row[data-key]');if(!r)return;
+ const it=items.find(i=>i.k+':'+i.rid==r.dataset.key);if(it)openEdit(it)});
+
+async function exportAll(){try{const out=[];for(const c of ['ev','meta']){const s=await getDocs(collection(db,c));s.forEach(d=>out.push({c,id:d.id,...d.data()}))}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'}));a.download='backup-'+today()+'.json';a.click();toast('تم تنزيل نسخة مشفّرة')}catch(e){toast('فشل: '+e.message)}}
 
 function start(){
- main();
- unsubs.push(onSnapshot(collection(db,'rates'),async s=>{const o={};
-  for(const d of s.docs)try{o[d.id]=(await dec(d.data().c)).rate}catch(e){}
-  rates=o;syncRate();render()}));
- unsubs.push(onSnapshot(collection(db,'tx'),async s=>{const out=[];bad=0;
-  for(const d of s.docs)try{out.push({id:d.id,...await dec(d.data().c)})}catch(e){bad++}
-  rows=out;render()},e=>{$('#list').innerHTML='<p class="msg">خطأ: '+esc(e.message)+'</p>'}));
+ $('#app').innerHTML=`<h1><button class="sm" id="mb" aria-label="القائمة">☰</button><span>دفتر البيت</span></h1><div id="pg"></div>
+ <div class="ov" id="dr" hidden><div class="side"><div style="padding:8px"><b>${esc(who)}</b><div class="mu">${esc(user.email)}</div></div>
+ <button data-p="home">المصاريف والدخل</button><button data-p="sav">مدخرات</button><button data-p="debt">الديون</button><button data-p="rep">التقرير</button>
+ <button id="bk">نسخة احتياطية مشفّرة</button><button id="lo">تسجيل خروج</button></div><div style="flex:1" id="cl"></div></div>`;
+ $('#mb').onclick=()=>$('#dr').hidden=false;$('#cl').onclick=()=>$('#dr').hidden=true;
+ document.querySelectorAll('.side [data-p]').forEach(b=>b.onclick=()=>go(b.dataset.p));
+ $('#bk').onclick=exportAll;$('#lo').onclick=()=>{ls.del('pw');signOut(auth)};
+ sub();go('home');
 }
-
-function main(){
- const now=new Date();
- $('#app').innerHTML=`<h1><span>دفتر البيت <span class="mu">· ${esc(who)}</span></span><button class="sm" id="lo">خروج</button></h1>
- <div class="card"><h2>عملية جديدة</h2>
- <div class="seg"><button class="e on" id="te">مصروف</button><button class="i" id="ti">دخل</button></div>
- <label>النوع (مشتريات / مصدر الدخل)</label><input id="cat" list="cats" placeholder="مثلاً: خضار، راتب"><datalist id="cats"><option>أكل<option>فواتير<option>مواصلات<option>ملابس<option>صحة<option>راتب<option>أخرى</datalist>
- <label>المبلغ بالليرة السورية</label><input id="am" type="number" inputmode="decimal" class="n">
- <div class="r"><div><label>التاريخ</label><input id="dt" type="date" value="${today()}"></div><div><label>الوقت</label><input id="tm" type="time" value="${now.toTimeString().slice(0,5)}"></div></div>
- <label>سعر الصرف لهاليوم (ل.س لكل $)</label><input id="rt" type="number" inputmode="decimal" class="n">
- <div class="mu" id="rh"></div><div class="msg" id="fm"></div><button id="add">حفظ</button></div>
- <div class="card"><div class="r" style="align-items:center"><h2 style="margin:0">ملخص الشهر</h2><input id="mo" type="month" value="${month}"></div>
- <div class="sum" id="sum" style="margin-top:10px"></div></div>
- <div class="card"><h2>العمليات</h2><div id="list"><p class="mu">عم نحمّل...</p></div></div>`;
- const setT=t=>{type=t;$('#te').className='e'+(t=='expense'?' on':'');$('#ti').className='i'+(t=='income'?' on':'')};
- $('#te').onclick=()=>setT('expense');$('#ti').onclick=()=>setT('income');
- $('#lo').onclick=()=>{ls.del('pw');signOut(auth)};
- $('#mo').onchange=e=>{month=e.target.value;render()};
- $('#dt').onchange=()=>{$('#rt').value='';syncRate()};
- $('#add').onclick=async()=>{const am=+$('#am').value,rt=+$('#rt').value,cat=$('#cat').value.trim(),date=$('#dt').value,time=$('#tm').value;
-  if(!cat||!(am>0)||!(rt>0)||!date){$('#fm').textContent='عبّي النوع والمبلغ وسعر الصرف';return}
-  $('#fm').textContent='';const err=e=>{$('#fm').textContent='ما انحفظت: '+(e.message||e.code)};
-  try{
-   if(rates[date]!==rt)setDoc(doc(db,'rates',date),{c:await enc({rate:rt,who})}).catch(err);
-   setDoc(doc(db,'tx',crypto.randomUUID()),{c:await enc({type,cat,am,date,time,who})}).catch(err);
-   $('#am').value='';$('#cat').value='';
-  }catch(e){err(e)}};
- syncRate();render();
-}
-
-function syncRate(){
- const el=$('#rt');if(!el)return;const r=rates[$('#dt').value];
- if(document.activeElement!==el)el.value=r||'';
- $('#rh').textContent=r?'سعر مشترك بينكن لهاليوم. تعديله بيغيّر حساب كل عمليات هاليوم.':'ما في سعر لهاليوم، دخّله مرة وحدة وبيظهر عند الاثنين.';
-}
-
-function render(){
- if(!$('#list'))return;
- const m=rows.filter(r=>(r.date||'').startsWith(month)).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time));
- const usd=r=>rates[r.date]?r.am/rates[r.date]:0;
- const s={income:[0,0],expense:[0,0]};m.forEach(r=>{s[r.type][0]+=r.am;s[r.type][1]+=usd(r)});
- const net=[s.income[0]-s.expense[0],s.income[1]-s.expense[1]];
- const box=(l,v,c)=>`<div><small>${l}</small><b class="${c} n">${fmt(v[0])} ل.س</b><small class="n">$${fmt(v[1],2)}</small></div>`;
- $('#sum').innerHTML=box('الدخل',s.income,'i')+box('المصاريف',s.expense,'e')+box('الصافي',net,net[0]>=0?'i':'e');
- $('#list').innerHTML=(bad?`<p class="msg">${bad} عملية ما انفكت (كلمة التشفير مختلفة؟)</p>`:'')+
- (m.length?m.map(r=>`<div class="row"><div><b>${esc(r.cat)}</b><small>${esc(r.who)} · ${esc(r.date)} ${esc(r.time||'')}</small></div>
- <div style="text-align:end"><b class="${r.type=='income'?'i':'e'} n">${r.type=='income'?'+':'−'}${fmt(r.am)} ل.س</b>
- <small class="n">${rates[r.date]?'$'+fmt(usd(r),2)+' @ '+fmt(rates[r.date]):'بدون سعر صرف'}</small>
- <button class="sm" data-id="${r.id}">حذف</button></div></div>`).join(''):'<p class="mu">ما في عمليات بهالشهر.</p>');
- document.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{if(confirm('حذف هالعملية؟'))deleteDoc(doc(db,'tx',b.dataset.id))});
-}
-
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
